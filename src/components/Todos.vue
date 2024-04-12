@@ -1,40 +1,57 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { computed } from "vue";
 import AddTodo from "./AddTodo.vue";
-import Todo from "./Todo.vue";
+import Todo, { TodoProps } from "./Todo.vue";
+import { handleLocalStorage } from "@/utils/handleLocalStorage";
 
-const myReactiveVariable = reactive({ count: 0 });
-const myRefVariable = ref(0);
+const todos = handleLocalStorage(); // this updates via instance Cache
 
-const incrementStuff = () => {
-  myReactiveVariable.count++;
+const openTodos = computed(() =>
+  todos.value.filter((todo: TodoProps) => !todo.completed)
+);
+const completedTodos = computed(() =>
+  todos.value.filter((todo: TodoProps) => todo.completed)
+);
+
+const completeTodo = (id: string) => {
+  const todoToComplete = todos.value.find((todo) => todo.id === id);
+  if (!todoToComplete) return;
+  todoToComplete.completed = !todoToComplete?.completed;
 };
 
-const decrementStuff = () => {
-  myReactiveVariable.count--;
+const archiveTodo = (id: string) => {
+  const todosToKeep = todos.value.filter((todo) => todo.id !== id);
+  todos.value = todosToKeep;
 };
 </script>
 
 <template>
-  <section class="grid gap-3 p-5">
+  <section class="grid gap-5 p-5">
     <h2>Todos App</h2>
     <AddTodo />
+
     <h3 class="text-2xl">Open ToDo's</h3>
-    <Todo name="testName" />
+    <p v-if="!openTodos.length">Keine offenen Todos</p>
+    <Todo
+      :key="todo.id"
+      :name="todo.name"
+      :id="todo.id"
+      :completed="todo.completed"
+      @toggleCompleted="completeTodo"
+      @archiveTodo="archiveTodo"
+      v-for="todo in openTodos"
+    />
 
     <h3 class="text-2xl">Completed ToDo's</h3>
-    Reactive: {{ myReactiveVariable.count }} Ref: {{ myRefVariable }}
-    <button
-      class="border bg-violet-300 p-3 rounded text-violet-900"
-      @click="incrementStuff"
-    >
-      Mehr!
-    </button>
-    <button
-      class="border bg-violet-300 p-3 rounded text-violet-900"
-      @click="decrementStuff"
-    >
-      Weniger!
-    </button>
+    <p v-if="!completedTodos.length">Keine Abgeschlossenen Todos</p>
+    <Todo
+      :key="todo.id"
+      :name="todo.name"
+      :id="todo.id"
+      :completed="todo.completed"
+      @toggleCompleted="completeTodo"
+      @archiveTodo="archiveTodo"
+      v-for="todo in completedTodos"
+    />
   </section>
 </template>
